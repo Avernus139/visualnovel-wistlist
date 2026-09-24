@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VN Vault — Visual Novel Bookmarks</title>
+<style>
+:root{
+  --bg:#0b0b12; --panel:#13131d; --panel2:#191925; --text:#f4f3f8;
+  --muted:#9895a8; --accent:#a855f7; --accent2:#ec4899; --border:#272637;
+  --green:#34d399; --yellow:#fbbf24; --blue:#60a5fa;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 20% 0%,#241332 0,#0b0b12 35%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{max-width:1400px;margin:auto;padding:28px}
+header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:28px}
+.brand{display:flex;align-items:center;gap:13px}
+.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:23px;box-shadow:0 8px 30px #a855f733}
+h1{font-size:25px;margin:0}.subtitle{color:var(--muted);font-size:13px;margin-top:3px}
+.actions{display:flex;gap:10px}
+.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:10px 15px;border-radius:11px}
+.btn.primary{border:0;background:linear-gradient(135deg,var(--accent),var(--accent2));font-weight:700}
+.toolbar{background:#11111aee;border:1px solid var(--border);padding:14px;border-radius:16px;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;position:sticky;top:10px;z-index:5;backdrop-filter:blur(14px)}
+.search{flex:1;min-width:220px}
+input,select,textarea{background:#0d0d15;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 12px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:22px}
+.tab{padding:8px 13px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted)}
+.tab.active{background:#8b5cf622;color:#ddd;border-color:#8b5cf666}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px}
+.card{background:linear-gradient(180deg,#171722,#101018);border:1px solid var(--border);border-radius:15px;overflow:hidden;transition:.2s;position:relative}
+.card:hover{transform:translateY(-5px);border-color:#8b5cf677;box-shadow:0 15px 35px #0008}
+.cover{aspect-ratio:3/4;position:relative;overflow:hidden;background:#242333}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .placeholder{height:100%;display:grid;place-items:center;color:#77728a;font-size:42px;background:linear-gradient(135deg,#211c35,#151520)}
+.status{position:absolute;top:10px;left:10px;padding:5px 8px;border-radius:7px;background:#080810d9;font-size:11px;font-weight:700;backdrop-filter:blur(8px)}
+.cardbody{padding:12px}.title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{font-size:12px;color:var(--muted);margin-top:5px}.rating{color:#fbbf24;margin-top:8px;font-size:13px}
+.card-actions{display:flex;gap:7px;margin-top:11px}.small{flex:1;padding:7px;border-radius:8px;border:1px solid var(--border);background:#0d0d15;color:var(--text);font-size:12px}
+.empty{text-align:center;padding:70px 20px;color:var(--muted);grid-column:1/-1}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
+.modal.show{display:flex}.modalbox{width:min(620px,100%);max-height:90vh;overflow:auto;background:#15151f;border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:0 25px 80px #000}
+.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal h2{margin:0}.close{background:none;border:0;color:var(--muted);font-size:24px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+textarea{min-height:100px;resize:vertical;width:100%}.field input,.field select{width:100%}
+.form-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+.count{color:var(--muted);font-size:13px;margin:0 0 12px}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:800px){.grid{grid-template-columns:repeat(3,1fr)}header{align-items:flex-start;flex-direction:column}}
+@media(max-width:560px){.app{padding:16px}.grid{grid-template-columns:repeat(2,1fr);gap:12px}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}.toolbar{position:static}.actions{width:100%}.actions .btn{flex:1}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand">
+    <div class="logo">📖</div>
+    <div><h1>VN Vault</h1><div class="subtitle">Your visual novel bookmark library</div></div>
+  </div>
+  <div class="actions"><button class="btn" id="exportBtn">Export</button><button class="btn primary" id="addBtn">＋ Add Visual Novel</button></div>
+</header>
+
+<div class="toolbar">
+  <input class="search" id="search" placeholder="🔍 Search visual novels...">
+  <select id="sort"><option value="added">Recently Added</option><option value="title">Title A–Z</option><option value="rating">Rating</option></select>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-status="All">All</button>
+  <button class="tab" data-status="Playing">🟢 Playing</button>
+  <button class="tab" data-status="Completed">🔵 Completed</button>
+  <button class="tab" data-status="On Hold">🟡 On Hold</button>
+  <button class="tab" data-status="Wishlist">⚪ Wishlist</button>
+</div>
+
+<p class="count" id="count"></p>
+<div class="grid" id="grid"></div>
+</div>
+
+<div class="modal" id="modal">
+<div class="modalbox">
+  <div class="modalhead"><h2 id="modalTitle">Add Visual Novel</h2><button class="close" id="close">×</button></div>
+  <form id="form">
+    <div class="formgrid">
+      <div class="field full"><label>Visual Novel Name</label><input id="name" required placeholder="e.g. Steins;Gate"></div>
+      <div class="field"><label>Cover Image URL</label><input id="cover" placeholder="https://..."></div>
+      <div class="field"><label>Status</label><select id="status"><option>Playing</option><option>Completed</option><option>On Hold</option><option>Wishlist</option></select></div>
+      <div class="field"><label>Rating</label><input id="rating" type="number" min="0" max="10" step=".1" placeholder="8.5"></div>
+      <div class="field"><label>Genre</label><input id="genre" placeholder="Romance, Mystery"></div>
+      <div class="field full"><label>Link</label><input id="link" type="url" placeholder="https://..."></div>
+      <div class="field full"><label>Notes</label><textarea id="notes" placeholder="Your notes..."></textarea></div>
+    </div>
+    <div class="form-actions"><button type="button" class="btn" id="cancel">Cancel</button><button class="btn primary">Save VN</button></div>
+  </form>
+</div>
+</div>
+
+<script>
+const starter=[
+ {id:1,name:"Steins;Gate",status:"Completed",rating:9.2,genre:"Sci-Fi • Mystery",cover:"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80",link:"#",notes:"A mind-bending time travel story."},
+ {id:2,name:"Clannad",status:"Playing",rating:8.8,genre:"Romance • Drama",cover:"https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80",link:"#",notes:""},
+ {id:3,name:"Doki Doki Literature Club!",status:"Wishlist",rating:8.5,genre:"Psychological • Horror",cover:"https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=600&q=80",link:"#",notes:""},
+ {id:4,name:"Fate/stay night",status:"On Hold",rating:9.0,genre:"Fantasy • Action",cover:"https://images.unsplash.com/photo-1518709594023-6eab9bab7b23?auto=format&fit=crop&w=600&q=80",link:"#",notes:""},
+ {id:5,name:"The House in Fata Morgana",status:"Completed",rating:9.6,genre:"Mystery • Drama",cover:"https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=600&q=80",link:"#",notes:""},
+ {id:6,name:"Aokana",status:"Wishlist",rating:8.7,genre:"Romance • Sports",cover:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80",link:"#",notes:""}
+];
+let vns=JSON.parse(localStorage.getItem("vnVault"))||starter;
+let currentStatus="All", editId=null;
+
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem("vnVault",JSON.stringify(vns))}
+function esc(s=""){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function render(){
+ const q=$("search").value.toLowerCase(), sort=$("sort").value;
+ let list=vns.filter(v=>(currentStatus==="All"||v.status===currentStatus)&&
+   (v.name+" "+v.genre+" "+v.notes).toLowerCase().includes(q));
+ if(sort==="title")list.sort((a,b)=>a.name.localeCompare(b.name));
+ if(sort==="rating")list.sort((a,b)=>(b.rating||0)-(a.rating||0));
+ $("count").textContent=`${list.length} visual novel${list.length!==1?"s":""}`;
+ $("grid").innerHTML=list.length?list.map(v=>`
+ <article class="card">
+  <div class="cover">${v.cover?`<img src="${esc(v.cover)}" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">`:''}<div class="placeholder" style="${v.cover?'display:none':''}">📖</div><div class="status">${statusIcon(v.status)} ${esc(v.status)}</div></div>
+  <div class="cardbody"><div class="title" title="${esc(v.name)}">${esc(v.name)}</div><div class="meta">${esc(v.genre||"No genre")}</div><div class="rating">★ ${v.rating??"—"}</div>
+  <div class="card-actions"><button class="small" onclick="editVN(${v.id})">Edit</button><button class="small" onclick="deleteVN(${v.id})">Delete</button></div></div>
+ </article>`).join(""):`<div class="empty"><div style="font-size:42px">📚</div><h3>No visual novels found</h3><p>Add one or change your search/filter.</p></div>`;
+}
+function statusIcon(s){return s==="Playing"?"🟢":s==="Completed"?"🔵":s==="On Hold"?"🟡":"⚪"}
+function openModal(v=null){
+ editId=v?.id||null;$("modalTitle").textContent=v?"Edit Visual Novel":"Add Visual Novel";
+ $("name").value=v?.name||"";$("cover").value=v?.cover||"";$("status").value=v?.status||"Playing";$("rating").value=v?.rating??"";$("genre").value=v?.genre||"";$("link").value=v?.link||"";$("notes").value=v?.notes||"";
+ $("modal").classList.add("show");$("name").focus();
+}
+function editVN(id){openModal(vns.find(v=>v.id===id))}
+function deleteVN(id){if(confirm("Delete this visual novel?")){vns=vns.filter(v=>v.id!==id);save();render()}}
+$("addBtn").onclick=()=>openModal();$("close").onclick=$("cancel").onclick=()=>{$("modal").classList.remove("show")};
+$("modal").onclick=e=>{if(e.target===$("modal"))$("modal").classList.remove("show")};
+$("form").onsubmit=e=>{e.preventDefault();const data={id:editId||Date.now(),name:$("name").value.trim(),cover:$("cover").value.trim(),status:$("status").value,rating:$("rating").value?Number($("rating").value):null,genre:$("genre").value.trim(),link:$("link").value.trim(),notes:$("notes").value.trim()};
+ if(editId)vns=vns.map(v=>v.id===editId?data:v);else vns.unshift(data);save();render();$("modal").classList.remove("show")};
+$("search").oninput=render;$("sort").onchange=render;
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");currentStatus=t.dataset.status;render()});
+$("exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(vns,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="vn-vault-bookmarks.json";a.click();URL.revokeObjectURL(a.href)};
+render();
+</script>
+</body>
+</html>
